@@ -55,7 +55,7 @@ CREATE OR REPLACE FUNCTION site01.station_rvc_part(in_stock_id   IN varchar,
 DECLARE
   v_cnt integer;
 BEGIN
-select count(1) into v_cnt from parts where send_stock_id=in_stock_id;
+select count(1) into v_cnt from site01.parts where send_stock_id=in_stock_id;
   if v_cnt>0 then
 
   update site01.STOCK_LIST
@@ -101,7 +101,7 @@ DECLARE
 
 BEGIN
 
-      update parts
+      update site01.parts
        set
            STATUS    = '8002',
            SEND_FLAG='Y',
@@ -141,7 +141,7 @@ DECLARE
 
 BEGIN
 
-      update parts
+      update site01.parts
        set
            STATUS    = '8002',
            SEND_FLAG='Y',
@@ -154,7 +154,7 @@ BEGIN
        and status ='8001' and BILL_ID=in_bill_id and stn_code=in_chan_id and  send_stock_id=in_stock_id;
 
     if found then
-     update stock_list
+     update site01.stock_list
         set status = 'F', opt_date = now(), opt_user = in_opt_user
       where stock_id = in_stock_id
         and status = 'V'
@@ -299,7 +299,7 @@ DECLARE
 
 BEGIN
 if in_imei is null then
-    update STOCK_LIST
+    update site01.STOCK_LIST
        set
            status    = 'H',
            OPT_USER     = in_opt_user,
@@ -310,7 +310,7 @@ if in_imei is null then
         and  chan_id     = in_chan_id
        and status ='N' ;
   else
-    update STOCK_LIST
+    update site01.STOCK_LIST
        set
            status    = 'H',
           opt_user     = in_opt_user,
@@ -344,7 +344,7 @@ CREATE OR REPLACE FUNCTION site01.zong_rvc_good( in_stock_id      IN varchar,
 DECLARE
 
 BEGIN
-UPDATE stock_list s
+UPDATE site01.stock_list s
        SET OPT_USER = IN_OPT_USER, chan_id = in_chan_id, STATUS = 'N'
      WHERE stock_id = in_stock_id
        AND STATUS = 'H';
@@ -382,7 +382,7 @@ update STOCK_LIST
       and chan_id = '100';
 
    if FOUND then
-     update parts
+     update site01.parts
         set ovo_flag = 'N', send_stock_id = in_stock_id
       where PARTS_ID = in_parts_id
         and status = '8001'
@@ -417,7 +417,7 @@ CREATE OR REPLACE FUNCTION site01.zong_putong_Send_Part_new(in_stock_id IN varch
 DECLARE
   --v_ret varchar(128);
 BEGIN
-update STOCK_LIST
+update site01.STOCK_LIST
       set status        = 'T',
           chan_id       = in_chan_id,
           OPT_USER      = in_opt_user,
@@ -430,7 +430,7 @@ update STOCK_LIST
       and chan_id = '157';
 
    if FOUND then
-     update parts
+     update site01.parts
         set ovo_flag = 'N', send_stock_id = in_stock_id
       where PARTS_ID = in_parts_id
         and status = '8001'
@@ -563,10 +563,10 @@ CREATE OR REPLACE FUNCTION site01.Station_RVC_Part_DEND(in_stock_id IN varchar,
 DECLARE
   v_cnt integer;
 BEGIN
-select count(1) into v_cnt from parts where send_stock_id=in_stock_id;
+select count(1) into v_cnt from site01.parts where send_stock_id=in_stock_id;
   if v_cnt>0 then
 
-  update STOCK_LIST
+  update site01.STOCK_LIST
        set
            status    = 'F',
            OPT_USER     = in_opt_user,
@@ -574,7 +574,7 @@ select count(1) into v_cnt from parts where send_stock_id=in_stock_id;
      where stock_id = in_stock_id
        and status ='T' and chan_id=in_chan_id;
         if FOUND then
-          update parts
+          update site01.parts
        set
            STATUS    = '8002',
            SEND_FLAG='Y',
@@ -591,7 +591,7 @@ select count(1) into v_cnt from parts where send_stock_id=in_stock_id;
 
   end if;
   if v_cnt=0 then
-    update STOCK_LIST
+    update site01.STOCK_LIST
        set
            status    = 'N',
            OPT_USER     = in_opt_user,

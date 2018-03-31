@@ -51,7 +51,7 @@ BEGIN
       (xpath('/xml/model/text()', V_XML)) [1],
       (xpath('/xml/pcolor/text()', V_XML)) [1],
       (xpath('/xml/imei/text()', V_XML)) [1],
-      upper(((xpath('/xml/pcode/text()'), V_XML)) [1]),
+      upper((xpath('/xml/pcode/text()', V_XML)) [1]),
       (xpath('/xml/appearance/text()', V_XML)) [1],
       (xpath('/xml/warranty/text()', V_XML)) [1],
       (xpath('/xml/warea/text()', V_XML)) [1],
@@ -94,7 +94,7 @@ BEGIN
     MODEL        = (xpath('/xml/model/text()', V_XML)) [1],
     PCOLOR       = (xpath('/xml/pcolor/text()', V_XML)) [1],
     IMEI         = (xpath('/xml/imei/text()', V_XML)) [1],
-    PCODE        = upper(((xpath('/xml/pcode/text()'), V_XML)) [1]),
+    PCODE        = upper((xpath('/xml/pcode/text()', V_XML)) [1]),
     APPEARANCE   = (xpath('/xml/appearance/text()', V_XML)) [1],
     WARRANTY     = (xpath('/xml/warranty/text()', V_XML)) [1],
     WAREA        = (xpath('/xml/warea/text()', V_XML)) [1],
@@ -381,7 +381,7 @@ BEGIN
   INSERT INTO UPLOAD_INF
   (ID, PN_NO, IMEI, QTY, OPT_USER, OPT_DATE, TRACE_NO, CHAN_ID, MEMO)
   VALUES
-    (nextval('site01.seq_stock_id' :: REGCLASS), IN_PN_NO, IN_IMEI, in_QTY, IN_OPT_USER, SYSDATE, IN_TRACE_NO, '100',
+    (nextval('site01.seq_stock_id' :: REGCLASS), IN_PN_NO, IN_IMEI, in_QTY, IN_OPT_USER, now(), IN_TRACE_NO, '100',
      IN_memo);
   IF FOUND
   THEN
@@ -410,7 +410,7 @@ DECLARE
 BEGIN
   IF IN_IMEI IS NOT NULL
   THEN
-    IF NOT CHECK_SN_UPLOAD(IN_IMEI)
+    IF NOT site01.CHECK_SN_UPLOAD(IN_IMEI)
     THEN
       --OUT_R := 'IMEI�ظ��ϴ�--' || IN_IMEI;
       OUT_R := 'Duplicated IMEI' || IN_IMEI;
@@ -438,7 +438,7 @@ BEGIN
   INSERT INTO UPLOAD_INF
   (ID, PN_NO, IMEI, QTY, OPT_USER, OPT_DATE, TRACE_NO, CHAN_ID, MEMO)
   VALUES
-    (nextval('site01.seq_stock_id' :: REGCLASS), IN_PN_NO, IN_IMEI, in_QTY, IN_OPT_USER, SYSDATE, IN_TRACE_NO, '157',
+    (nextval('site01.seq_stock_id' :: REGCLASS), IN_PN_NO, IN_IMEI, in_QTY, IN_OPT_USER, NOW(), IN_TRACE_NO, '157',
      IN_memo);
   IF FOUND
   THEN
@@ -900,27 +900,27 @@ CREATE OR REPLACE FUNCTION site01.update_dealer_RVC(
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
 
-BEGIN
-  BEGIN
-    UPDATE site01.bills_dealer p
-    SET status           = in_bill_status,
-      DEALER_RVC_USER_ID = in_opt_user,
-      DEALER_RVC_DATE    = now()
-    WHERE bill_no = in_bill_id;
-    -- and status = '6001';
 
-    --dbms_output.put_line('2��'||sql%rowcount );
-    IF FOUND
+BEGIN
+  UPDATE site01.bills_dealer p
+  SET status           = in_bill_status,
+    DEALER_RVC_USER_ID = in_opt_user,
+    DEALER_RVC_DATE    = now()
+  WHERE bill_no = in_bill_id;
+  -- and status = '6001';
+
+  --dbms_output.put_line('2��'||sql%rowcount );
+  IF FOUND
+  THEN
+    out_ret := 'OK';
+  ELSE
+    out_ret := 'Receiving failed';
+  END IF;
+  EXCEPTION
+  WHEN OTHERS
     THEN
-      out_ret := 'OK';
-    ELSE
-      out_ret := 'Receiving failed';
-    END IF;
-    EXCEPTION
-    WHEN OTHERS
-      THEN
-        out_ret := 'sqlerrm';
-  END;
+      out_ret := 'Exception';
+END;
 $$;
 
 CREATE OR REPLACE FUNCTION site01.GetOutStation(in_bill_id   IN  VARCHAR,
@@ -967,9 +967,10 @@ BEGIN
     --out_ret := 'ά�޵������ڻ���״̬�Ѹı�2!';
     out_ret := 'Order not exists or status changed';
   END IF;
-  EXCEPTION  WHEN OTHERS
-    THEN
-      out_ret := 'Exception';
+
+  EXCEPTION WHEN OTHERS
+  THEN
+    out_ret := 'Exception';
 
 END;
 $$;

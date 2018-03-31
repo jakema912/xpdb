@@ -380,8 +380,8 @@ DECLARE
 BEGIN
 SELECT COUNT(1)
       INTO v_cnt
-      FROM site01.imei_inf
-     WHERE imei_main = IN_imei;
+      FROM site01.upload_inf
+     WHERE IMEI = IN_imei;
     IF v_cnt = 0 THEN
       RETURN TRUE;
     ELSE
