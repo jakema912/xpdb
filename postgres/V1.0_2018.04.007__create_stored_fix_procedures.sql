@@ -441,7 +441,7 @@ BEGIN
   VALUES
     (nextval('site01.seq_stock_id' :: REGCLASS), IN_PN_NO, IN_IMEI, in_QTY, IN_OPT_USER, NOW(), IN_TRACE_NO, '157',
      IN_memo,in_pn_name);
-  IF FOUND
+  IF ROW_COUNT!=1
   THEN
     OUT_R := 'error';
     RETURN;
