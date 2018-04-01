@@ -350,5 +350,5 @@ create table site01.USERS_INF
   FLAG                 CHAR(1) default 'Y',
   ENG_FLAG             VARCHAR(16),
   MAIL                 VARCHAR(32),
-  ROLE_ID              VARCHAR(16)
+  ROLE_ID              INTEGER NOT NULL
 )TABLESPACE tsdata;
