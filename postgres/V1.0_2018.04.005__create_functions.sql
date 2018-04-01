@@ -256,7 +256,8 @@ select to_char(opt_date, 'YYYY-MM-DD hh24:mi:ss')
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION site01.func_get_station_rvc_date(in_send_stock_id in varchar,IN_BILL_ID IN varchar,in_chan_id in varchar)
+CREATE OR REPLACE FUNCTION site01.func_get_station_rvc_date(
+  in_send_stock_id in varchar,IN_BILL_ID IN varchar,in_chan_id in varchar)
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
   v_ret varchar(128);

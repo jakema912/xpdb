@@ -16,6 +16,7 @@ BEGIN
      new.chan_id,
      old.chan_id,
      now());
+  RETURN new;
 END;
 $$;
 
@@ -66,6 +67,7 @@ BEGIN
          NEW.opt_user);
     END LOOP;
   END IF;
+  RETURN new;
   EXCEPTION
   WHEN OTHERS
     THEN
@@ -111,6 +113,7 @@ BEGIN
                                end if;*/
     END IF;
   END IF;
+  return new;
 END;
 $$;
 
@@ -185,7 +188,7 @@ BEGIN
         new.M_TYPE,
        'D');
   END IF;
-
+  return new;
 END;
 $$;
 
@@ -220,6 +223,7 @@ BEGIN
     VALUES
       (v_pn_no, v_stn_code, in_bad_number, in_good_number);
   END IF;
+  return new;
 END;
 $$;
 
@@ -249,6 +253,7 @@ BEGIN
   THEN
     PERFORM site01.usp_change_stock(new.stn_code, new.pn_no, 0, -1);
   END IF;
+  return new;
   EXCEPTION
   WHEN OTHERS
     THEN

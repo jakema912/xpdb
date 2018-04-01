@@ -378,7 +378,7 @@ BEGIN
     OUT_R := 'TRACE NO IS EMPTY';
     RETURN;
   END IF;
-  INSERT INTO UPLOAD_INF
+  INSERT INTO site01.UPLOAD_INF
   (ID, PN_NO, IMEI, QTY, OPT_USER, OPT_DATE, TRACE_NO, CHAN_ID, MEMO)
   VALUES
     (nextval('site01.seq_stock_id' :: REGCLASS), IN_PN_NO, IN_IMEI, in_QTY, IN_OPT_USER, now(), IN_TRACE_NO, '100',
@@ -400,9 +400,10 @@ $$;
 CREATE OR REPLACE FUNCTION site01.uploadinf_new(IN_PN_NO    IN  VARCHAR,
                                                 IN_IMEI     IN  VARCHAR,
                                                 IN_memo     IN  VARCHAR,
-                                                in_QTY      IN  VARCHAR,
+                                                in_QTY      IN  INTEGER,
                                                 IN_OPT_USER IN  VARCHAR,
                                                 IN_TRACE_NO IN  VARCHAR,
+                                                in_pn_name  in   VARCHAR,
                                                 OUT_R       OUT VARCHAR)
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
@@ -435,21 +436,21 @@ BEGIN
     OUT_R := 'TRACE NO IS EMPTY';
     RETURN;
   END IF;
-  INSERT INTO UPLOAD_INF
-  (ID, PN_NO, IMEI, QTY, OPT_USER, OPT_DATE, TRACE_NO, CHAN_ID, MEMO)
+  INSERT INTO site01.UPLOAD_INF
+  (ID, PN_NO, IMEI, QTY, OPT_USER, OPT_DATE, TRACE_NO, CHAN_ID, MEMO,pn_desc)
   VALUES
     (nextval('site01.seq_stock_id' :: REGCLASS), IN_PN_NO, IN_IMEI, in_QTY, IN_OPT_USER, NOW(), IN_TRACE_NO, '157',
-     IN_memo);
+     IN_memo,in_pn_name);
   IF FOUND
   THEN
     OUT_R := 'error';
     RETURN;
   END IF;
   OUT_R := 'OK';
-  EXCEPTION
+ /* EXCEPTION
   WHEN OTHERS
     THEN
-      OUT_R := 'SQLERRM';
+      OUT_R := 'SQLERRM';*/
 END;
 $$;
 
@@ -519,8 +520,8 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION site01.OPEN_ORDERS_NEW(IN_DATA  IN  VARCHAR,
-                                                  OUT_DATA OUT VARCHAR)
+CREATE OR REPLACE FUNCTION site01.OPEN_ORDERS_NEW(IN_DATA  IN  VARCHAR(1000),
+                                                  OUT_DATA OUT VARCHAR(1000))
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
   V_XML XML;
@@ -598,7 +599,7 @@ BEGIN
       (xpath('/xml/m_type/text()', V_XML)) [1];
   EXCEPTION WHEN OTHERS
   THEN
-    OUT_DATA := 'Exception';
+    OUT_DATA := 'Exception:';
 END;
 $$;
 
@@ -612,7 +613,7 @@ DECLARE
 BEGIN
   V_XML := XMLPARSE(DOCUMENT IN_DATA);
   OUT_DATA := 'OK';
-  INSERT INTO BILLS_DEALER
+  INSERT INTO site01.BILLS_DEALER
   (
     BILL_NO,
     SN,
@@ -796,7 +797,7 @@ BEGIN
   END IF;
 
 
-  INSERT INTO parts
+  INSERT INTO site01.parts
   (PARTS_ID,
    BILL_ID,
    STATUS,
