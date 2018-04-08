@@ -239,7 +239,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION site01.JCSTOCKIN(IN_ID       IN varchar,
+CREATE OR REPLACE FUNCTION site01.JCSTOCKIN(IN_ID IN INTEGER,
                       IN_OPT_USER IN varchar,
                       IN_MEMO     IN varchar,
                       IN_STATUS   IN varchar,
@@ -252,14 +252,14 @@ UPDATE site01.upload_inf s
        SET OPT_USER = IN_OPT_USER, MEMO = IN_MEMO, STATUS = IN_STATUS
      WHERE ID = IN_ID
        AND STATUS = 'N';
-    IF FOUND THEN
+    IF  not FOUND THEN
       OUT_R := 'error';
       RETURN;
     END IF;
     OUT_R := 'OK';
-  EXCEPTION
+  /*EXCEPTION
     WHEN OTHERS THEN
-      OUT_R := 'EXCEPTION';
+      OUT_R := 'EXCEPTION';*/
 END;
 $$;
 
@@ -405,7 +405,7 @@ END;
 $$;
 
 
-CREATE OR REPLACE FUNCTION site01.zong_putong_Send_Part_new(in_stock_id IN varchar,
+CREATE OR REPLACE FUNCTION site01.zong_putong_Send_Part_new(in_stock_id IN INTEGER,
                                  in_parts_id in varchar,
                                  in_bill_id  in varchar,
                                  in_opt_user in varchar,
@@ -446,9 +446,9 @@ update site01.STOCK_LIST
      out_ret :='Order not exists or status changed';
    end if;
 
- exception
+ /*exception
    when others then
-     out_ret := 'sqlerrm';
+     out_ret := 'sqlerrm';*/
 END;
 $$;
 
@@ -553,7 +553,7 @@ END;
 $$;
 
 
-CREATE OR REPLACE FUNCTION site01.Station_RVC_Part_DEND(in_stock_id IN varchar,
+CREATE OR REPLACE FUNCTION site01.Station_RVC_Part_SEND(in_stock_id IN INTEGER,
                      in_opt_user  in varchar,
                      in_pn in varchar,
                      in_sn in varchar,

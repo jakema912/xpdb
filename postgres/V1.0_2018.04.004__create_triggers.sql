@@ -4,19 +4,35 @@ CREATE OR REPLACE FUNCTION site01.triggers_stock_list_log()
   RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
   -- local variables here
+
 BEGIN
+ if tg_op='INSERT' then
   INSERT INTO site01.stock_list_log
-  (STOCK_ID, old_status, new_status, memo, opt_user, NEW_CHAN_ID, OLD_CHAN_ID, opt_date)
+  (STOCK_ID,old_status, new_status, memo, opt_user, NEW_CHAN_ID, OLD_CHAN_ID, opt_date)
   VALUES
     (new.stock_id,
-     COALESCE(old.status, 'N'),
+     new.status,
      new.status,
      new.memo,
      new.opt_user,
      new.chan_id,
-     old.chan_id,
+     new.chan_id,
      now());
   RETURN new;
+   ELSEIF tg_op='UPDATE' then
+   INSERT INTO site01.stock_list_log
+  (STOCK_ID,old_status, new_status, memo, opt_user, NEW_CHAN_ID, OLD_CHAN_ID, opt_date)
+  VALUES
+    (new.stock_id,
+     old.status,
+     new.status,
+     new.memo,
+     new.opt_user,
+     old.chan_id,
+     new.chan_id,
+     now());
+  RETURN new;
+   end if;
 END;
 $$;
 
@@ -31,12 +47,12 @@ CREATE OR REPLACE FUNCTION site01.triggers_stock()
   RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
   v_qty       INTEGER;
-
   err_context TEXT;
-
+  i INTEGER;
 BEGIN
   IF NEW.STATUS = 'C' AND OLD.STATUS = 'N'
   THEN
+    i:=1;
     v_qty := OLD.qty;
     IF v_qty IS NULL OR v_qty < 0
     THEN
@@ -68,13 +84,13 @@ BEGIN
     END LOOP;
   END IF;
   RETURN new;
-  EXCEPTION
-  WHEN OTHERS
-    THEN
-      --RAISE_APPLICATION_ERROR(-20010, NEW.id||'�����������ֻ�Ϊ�� !');
-      GET STACKED DIAGNOSTICS err_context = PG_EXCEPTION_CONTEXT;
-      RAISE EXCEPTION 'EXCEPTION:%', new.id
-      USING ERRCODE = '-20010';
+ EXCEPTION
+   WHEN OTHERS
+     THEN
+--       --RAISE_APPLICATION_ERROR(-20010, NEW.id||'�����������ֻ�Ϊ�� !');
+       GET STACKED DIAGNOSTICS err_context = PG_EXCEPTION_CONTEXT;
+       RAISE EXCEPTION 'EXCEPTION:%', new.id
+       USING ERRCODE = '-20010';
   --RAISE INFO 'Error Name:%',SQLERRM;
   --RAISE INFO 'Error State:%', SQLSTATE;
   --RAISE INFO 'Error Context:%', err_context;

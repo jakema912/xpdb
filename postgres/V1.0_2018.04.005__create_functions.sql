@@ -238,7 +238,7 @@ END;
 $$;
 
 
-CREATE OR REPLACE FUNCTION site01.func_get_zong_send_date(in_send_stock_id in varchar,IN_BILL_ID IN varchar)
+CREATE OR REPLACE FUNCTION site01.func_get_zong_send_date(in_send_stock_id INTEGER,IN_BILL_ID IN varchar)
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
   v_ret varchar(128);
@@ -256,8 +256,7 @@ select to_char(opt_date, 'YYYY-MM-DD hh24:mi:ss')
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION site01.func_get_station_rvc_date(
-  in_send_stock_id in varchar,IN_BILL_ID IN varchar,in_chan_id in varchar)
+CREATE OR REPLACE FUNCTION site01.func_get_station_rvc_date(in_send_stock_id in INTEGER,IN_BILL_ID IN varchar,in_chan_id in varchar)
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
   v_ret varchar(128);
@@ -309,7 +308,7 @@ END;
 $$;
 
 
-CREATE OR REPLACE FUNCTION site01.func_get_GOOD_station_date(IN_STOCK_ID in varchar,in_chan_id in varchar)
+CREATE OR REPLACE FUNCTION site01.func_get_GOOD_station_date(IN_STOCK_ID in INTEGER,in_chan_id in varchar)
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
   v_ret varchar(128);
@@ -405,3 +404,19 @@ BEGIN
   end if;
 END;
 $$
+
+CREATE OR REPLACE FUNCTION site01.func_get_stock_count(in_pn_no in varchar)
+  RETURNS VARCHAR LANGUAGE plpgsql AS $$
+DECLARE
+  v_ret varchar(128);
+  vcont integer;
+BEGIN
+    select count(1) into vcont from site01.stock_list
+    where pn_no = in_pn_no and status='N' and chan_id='157' ;
+    v_ret:=vcont;
+    return v_ret;
+  exception
+    when others then
+      return in_bill_id;
+END;
+$$;

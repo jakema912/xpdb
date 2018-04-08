@@ -207,7 +207,7 @@ BEGIN
      in_userid
     );
 
-  IF found
+  IF row_count=1
   THEN
     UPDATE site01.bills
     SET status = '4003'
@@ -407,14 +407,14 @@ CREATE OR REPLACE FUNCTION site01.uploadinf_new(IN_PN_NO    IN  VARCHAR,
                                                 OUT_R       OUT VARCHAR)
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
-
+ v_count INT;
 BEGIN
   IF IN_IMEI IS NOT NULL
   THEN
     IF NOT site01.CHECK_SN_UPLOAD(IN_IMEI)
     THEN
       --OUT_R := 'IMEI�ظ��ϴ�--' || IN_IMEI;
-      OUT_R := 'Duplicated IMEI' || IN_IMEI;
+      OUT_R := 'Duplicated SN' || IN_IMEI;
       RETURN;
     END IF;
   END IF;
@@ -441,7 +441,9 @@ BEGIN
   VALUES
     (nextval('site01.seq_stock_id' :: REGCLASS), IN_PN_NO, IN_IMEI, in_QTY, IN_OPT_USER, NOW(), IN_TRACE_NO, '157',
      IN_memo,in_pn_name);
-  IF ROW_COUNT!=1
+
+  GET  DIAGNOSTICS  v_count =ROW_COUNT ;
+  IF v_count!=1
   THEN
     OUT_R := 'error';
     RETURN;
@@ -461,7 +463,7 @@ CREATE OR REPLACE FUNCTION site01.Back_Part(in_bill_id    IN  VARCHAR,
                                             out_ret       OUT VARCHAR)
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
-  v_send_stock_id VARCHAR(32);
+  v_send_stock_id INTEGER;
 BEGIN
   IF in_back_class = '1302' OR in_back_class = '1303'
   THEN
@@ -487,11 +489,11 @@ BEGIN
     INTO v_send_stock_id
     FROM site01.parts
     WHERE parts_id = in_part_id;
-    UPDATE parts p
+    UPDATE site01.parts
     SET status    = '8003',
-      p.back_flag = 'Y',
-      p.back_date = now(),
-      p.back_type = '1301',
+      back_flag = 'Y',
+      back_date = now(),
+      back_type = '1301',
       opt_user    = in_opt_user,
       opt_date    = now()
     WHERE bill_id = in_bill_id
@@ -499,7 +501,7 @@ BEGIN
           AND status = '8002'
           AND send_flag = 'Y';
 
-    UPDATE stock_list
+    UPDATE site01.stock_list
     SET status = 'Y', opt_date = now(), opt_user = in_opt_user
     WHERE stock_id = v_send_stock_id;
 
@@ -510,13 +512,13 @@ BEGIN
     out_ret := 'OK';
   ELSE
     --out_ret := 'ά�޵������ڻ���״̬�Ѹı�!';
-    out_ret := 'Order not exists or status changed';
+    out_ret := v_send_stock_id||':'||in_part_id;
   END IF;
 
-  EXCEPTION
+  /*EXCEPTION
   WHEN OTHERS
     THEN
-      out_ret := 'sqlerrm';
+      out_ret := 'sqlerrm';*/
 END;
 $$;
 
@@ -525,39 +527,31 @@ CREATE OR REPLACE FUNCTION site01.OPEN_ORDERS_NEW(IN_DATA  IN  VARCHAR(1000),
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
   V_XML XML;
+  v_date DATE;
+  v_purdate VARCHAR;
 BEGIN
   V_XML := XMLPARSE(DOCUMENT IN_DATA);
   OUT_DATA := 'OK';
+  v_purdate:=(xpath('/xml/purdate/text()', V_XML)) [1];
+  v_date = site01.func_parse_date(v_purdate,null);
   INSERT INTO site01.bills
-  (
-    BILL_NO,
+  ( BILL_NO,
     SN,
     STATUS,
     CUST_TYPE,
     CUST_NAME,
     CUST_TEL,
     DEALER,
-    PART_TYPE,
     MODEL,
-    --PCOLOR,
-    --IMEI,
-    --PCODE,
+    part_type,
     APPEARANCE,
     WARRANTY,
-    WAREA,
-    FIX_TYPE,
-    --CHANGETYPE,
     PURDATE,
-    INVOICE,
-    INVOICE_NO,
-    --SID,
     OPEN_USER,
     OPT_USER,
     RC_ID,
     SYMPTOM_CODE,
     SYMPTOM_DESC,
-    --FAULT_TOTAL,
-    OLD_VERSION,
     E_MAIL,
     M_USE_HOUSE,
     D_USE_HOUSE,
@@ -571,37 +565,28 @@ BEGIN
       (xpath('/xml/custname/text()', V_XML)) [1],
       (xpath('/xml/custtel/text()', V_XML)) [1],
       (xpath('/xml/dealer/text()', V_XML)) [1],
-      (xpath('/xml/parttype/text()', V_XML)) [1],
       (xpath('/xml/model/text()', V_XML)) [1],
-      --(xpath('/xml/pcolor/text()', V_XML)) [1],
-      --(xpath('/xml/imei/text()', V_XML)) [1],
-      --upper(((xpath('/xml/pcode/text()'), V_XML))[1]),
+     (xpath('/xml/parttype/text()', V_XML)) [1],
       (xpath('/xml/appearance/text()', V_XML)) [1],
       (xpath('/xml/warranty/text()', V_XML)) [1],
-      (xpath('/xml/warea/text()', V_XML)) [1],
-      (xpath('/xml/fixtype/text()', V_XML)) [1],
-      --(xpath('/xml/changetype/text()', V_XML)) [1],
-      site01.func_parse_date((xpath('/xml/purdate/text()', V_XML)) [1], NULL),
-      (xpath('/xml/invoice/text()', V_XML)) [1],
-      (xpath('/xml/invoiceno/text()', V_XML)) [1],
-      --(xpath('/xml/sid/text()', V_XML)) [1],
+      v_date,
       (xpath('/xml/optuser/text()', V_XML)) [1],
       (xpath('/xml/optuser/text()', V_XML)) [1],
       (xpath('/xml/rcid/text()', V_XML)) [1],
-      --(xpath('/xml/symptom/text()', V_XML)) [1],
-      (xpath('/xml/total_class/text()', V_XML)) [1],
+      (xpath('/xml/symptom/text()', V_XML)) [1],
       (xpath('/xml/zhengzhuangdesc/text()', V_XML)) [1],
-      (xpath('/xml/vserion/text()', V_XML)) [1],
       (xpath('/xml/email/text()', V_XML)) [1],
       (xpath('/xml/m_use_house/text()', V_XML)) [1],
       (xpath('/xml/d_use_house/text()', V_XML)) [1],
       (xpath('/xml/m_light/text()', V_XML)) [1],
       (xpath('/xml/m_type/text()', V_XML)) [1];
-  EXCEPTION WHEN OTHERS
+
+  /*EXCEPTION WHEN OTHERS
   THEN
-    OUT_DATA := 'Exception:';
+    OUT_DATA := 'Exception:';*/
 END;
-$$;
+$$
+;
 
 
 CREATE OR REPLACE FUNCTION site01.OPEN_dealer_open(IN_DATA  IN  VARCHAR,
@@ -610,9 +595,13 @@ CREATE OR REPLACE FUNCTION site01.OPEN_dealer_open(IN_DATA  IN  VARCHAR,
 DECLARE
 
   V_XML XML;
+   v_date DATE;
+  v_purdate VARCHAR;
 BEGIN
   V_XML := XMLPARSE(DOCUMENT IN_DATA);
   OUT_DATA := 'OK';
+  v_purdate:=(xpath('/xml/purdate/text()', V_XML)) [1];
+  v_date = site01.func_parse_date(v_purdate,null);
   INSERT INTO site01.BILLS_DEALER
   (
     BILL_NO,
@@ -642,10 +631,10 @@ BEGIN
       (xpath('/xml/model/text()', V_XML)) [1],
       (xpath('/xml/appearance/text()', V_XML)) [1],
       (xpath('/xml/warranty/text()', V_XML)) [1],
-      site01.func_parse_date((xpath('/xml/purdate/text()', V_XML)) [1], NULL),
+      v_date,
       (xpath('/xml/rcid/text()', V_XML)) [1],
-      --(xpath('/xml/symptom/text()', V_XML)) [1],
-      (xpath('/xml/total_class/text()', V_XML)) [1],
+      (xpath('/xml/symptom/text()', V_XML)) [1],
+      --(xpath('/xml/total_class/text()', V_XML)) [1],
       (xpath('/xml/zhengzhuangdesc/text()', V_XML)) [1],
       (xpath('/xml/m_use_house/text()', V_XML)) [1],
       (xpath('/xml/d_use_house/text()', V_XML)) [1],
@@ -654,9 +643,9 @@ BEGIN
       (xpath('/xml/traceno/text()', V_XML)) [1],
       (xpath('/xml/tracename/text()', V_XML)) [1],
       (xpath('/xml/optuser/text()', V_XML)) [1];
-  EXCEPTION WHEN OTHERS
+  /*EXCEPTION WHEN OTHERS
   THEN
-    OUT_DATA := 'Exception';
+    OUT_DATA := 'Exception';*/
 END;
 $$;
 
@@ -699,7 +688,7 @@ BEGIN
   IF in_is_end = 'Y'
   THEN
 
-    UPDATE bills
+    UPDATE site01.bills
     SET is_end = 'Y',
       status   = '4004',
       fix_date = now()
@@ -750,7 +739,7 @@ BEGIN
   IF in_is_end = 'Y'
   THEN
 
-    UPDATE bills
+    UPDATE site01.bills
     SET is_end = 'Y',
       status   = '4004',
       fix_date = now()
@@ -763,10 +752,10 @@ BEGIN
   ELSE
     out_ret := 'Order not exists or status changed';
   END IF;
-  EXCEPTION
+ /* EXCEPTION
   WHEN OTHERS
     THEN
-      out_ret := 'sqlerrm';
+      out_ret := 'sqlerrm';*/
 END;
 $$;
 
@@ -777,12 +766,13 @@ CREATE OR REPLACE FUNCTION site01.insert_part_list_app(in_bill_id  IN  VARCHAR,
                                                        in_desc     IN  VARCHAR,
                                                        in_userid   IN  VARCHAR,
                                                        in_chanid   IN  VARCHAR,
-                                                       in_stock_id IN  VARCHAR,
+                                                       in_stock_id IN  INTEGER,
                                                        in_ovo_flag IN  VARCHAR,
                                                        out_ret     OUT VARCHAR)
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
   v_cont INTEGER;
+  v_rowcount INT;
 BEGIN
 
   SELECT count(1)
@@ -825,15 +815,15 @@ BEGIN
       in_ovo_flag,
      in_userid
     );
-
-  IF FOUND
+     GET  DIAGNOSTICS  v_rowcount =ROW_COUNT ;
+  IF  v_rowcount=1
   THEN
-    UPDATE bills
+    UPDATE site01.bills
     SET status = '4003'
     WHERE bill_no = in_bill_id;
     IF in_stock_id IS NOT NULL
     THEN
-      UPDATE stock_list
+      UPDATE site01.stock_list
       SET status = 'F', opt_date = now(), opt_user = in_userid
       WHERE stock_id = in_stock_id AND status = 'N' AND pn_no = in_pn;
       IF FOUND
@@ -851,10 +841,10 @@ BEGIN
     --out_ret := '���汸�����ɹ�!';
     out_ret := 'Parts save failed';
   END IF;
-  EXCEPTION
+ /* EXCEPTION
   WHEN OTHERS
     THEN
-      out_ret := 'sqlerrm';
+      out_ret := 'sqlerrm';*/
 END;
 $$;
 
@@ -864,20 +854,40 @@ CREATE OR REPLACE FUNCTION site01.fix_station_rvc(
   in_app_flag    IN  VARCHAR,
   in_opt_user    IN  VARCHAR,
   in_bill_status IN  VARCHAR,
+  in_rvc_chan_id in VARCHAR,
+  in_trace_no in VARCHAR,
+  in_trace_name in VARCHAR,
   out_ret        OUT VARCHAR)
   RETURNS VARCHAR LANGUAGE plpgsql AS $$
 DECLARE
 
 BEGIN
+  if in_app_flag='Y'
+    then
   UPDATE site01.bills_dealer p
   SET status    = in_bill_status,
     RVC_USER_ID = in_opt_user,
     RVC_DATE    = now(),
     RVC_MEMO    = in_memo,
-    RVC_FLAG    = in_app_flag
+    RVC_FLAG    = in_app_flag,
+    rvc_chan_id =in_rvc_chan_id
   WHERE bill_no = in_bill_id
         AND status = '6001';
-
+  ELSE
+    UPDATE site01.bills_dealer p
+  SET status    = in_bill_status,
+    RVC_USER_ID = in_opt_user,
+    RVC_DATE    = now(),
+    RVC_MEMO    = in_memo,
+    RVC_FLAG    = in_app_flag,
+    rvc_chan_id =in_rvc_chan_id,
+    return_date =now(),
+    return_trace_no=in_trace_no,
+    return_trace_name=in_trace_name,
+    return_user_id=in_opt_user
+  WHERE bill_no = in_bill_id
+        AND status = '6001';
+    END IF ;
   --dbms_output.put_line('2��'||sql%rowcount );
   IF FOUND
   THEN
@@ -939,7 +949,7 @@ CREATE OR REPLACE FUNCTION site01.GetOutStation(in_bill_id   IN  VARCHAR,
 DECLARE
 
 BEGIN
-  UPDATE bills
+  UPDATE site01.bills
   SET status    = '4005',
     end_user    = in_engid,
     is_satify   = in_is_satify,
@@ -956,8 +966,9 @@ BEGIN
   THEN
     IF in_billtype = 'D'
     THEN
-      UPDATE bills_dealer
+      UPDATE site01.bills_dealer
       SET RETURN_DATE     = now(),
+        status='6003',
         RETURN_USER_ID    = in_opt_user,
         RETURN_TRACE_NO   = in_traceno,
         RETURN_TRACE_NAME = in_tracename
@@ -969,9 +980,9 @@ BEGIN
     out_ret := 'Order not exists or status changed';
   END IF;
 
-  EXCEPTION WHEN OTHERS
+ /* EXCEPTION WHEN OTHERS
   THEN
-    out_ret := 'Exception';
+    out_ret := 'Exception';*/
 
 END;
 $$;
