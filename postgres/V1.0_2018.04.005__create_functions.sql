@@ -420,3 +420,32 @@ BEGIN
       return in_bill_id;
 END;
 $$;
+
+
+
+CREATE OR REPLACE FUNCTION site01.usp_change_stock(in_stn_code    IN VARCHAR,
+                                                   in_pn_no       IN VARCHAR,
+                                                   in_good_number IN INTEGER,
+                                                   in_bad_number  IN INTEGER)
+  RETURNS VOID LANGUAGE plpgsql AS $$
+DECLARE
+  v_stn_code VARCHAR(32);
+  v_pn_no    VARCHAR(32);
+BEGIN
+  v_stn_code := upper(TRIM(in_stn_code));
+  v_pn_no := upper(TRIM(in_pn_no));
+
+  UPDATE site01.inventory
+  SET bad_quantity = bad_quantity + in_bad_number,
+    good_quantity  = good_quantity + in_good_number
+  WHERE stn_code = v_stn_code
+        AND pn_no = v_pn_no;
+  IF NOT FOUND
+  THEN
+    INSERT INTO site01.inventory
+    (pn_no, stn_code, bad_quantity, good_quantity)
+    VALUES
+      (v_pn_no, v_stn_code, in_bad_number, in_good_number);
+  END IF;
+END;
+$$;
