@@ -986,3 +986,53 @@ BEGIN
 
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION site01.func_get_station_rvc_date(in_send_stock_id character varying,IN_BILL_ID character varying,in_chan_id character varying)
+  RETURNS character varying
+  LANGUAGE plpgsql
+AS
+$body$
+DECLARE
+  v_ret varchar(128);
+BEGIN
+select to_char(opt_date, 'YYYY-MM-DD hh24:mi:ss')
+      into v_ret
+      from stock_list_log
+     where stock_id = in_send_stock_id
+       and new_STATUS = 'N'
+       AND new_CHAN_ID = in_chan_id;
+    return v_ret;
+  exception
+    when others then
+      return 'N/A';
+END;
+$body$;
+
+
+
+CREATE OR REPLACE FUNCTION site01.usp_change_stock(in_stn_code    IN VARCHAR,
+                                                   in_pn_no       IN VARCHAR,
+                                                   in_good_number IN INTEGER,
+                                                   in_bad_number  IN INTEGER)
+  RETURNS VOID LANGUAGE plpgsql AS $$
+DECLARE
+  v_stn_code VARCHAR(32);
+  v_pn_no    VARCHAR(32);
+BEGIN
+  v_stn_code := upper(TRIM(in_stn_code));
+  v_pn_no := upper(TRIM(in_pn_no));
+
+  UPDATE site01.inventory
+  SET bad_quantity = bad_quantity + in_bad_number,
+    good_quantity  = good_quantity + in_good_number
+  WHERE stn_code = v_stn_code
+        AND pn_no = v_pn_no;
+  IF NOT FOUND
+  THEN
+    INSERT INTO site01.inventory
+    (pn_no, stn_code, bad_quantity, good_quantity)
+    VALUES
+      (v_pn_no, v_stn_code, in_bad_number, in_good_number);
+  END IF;
+END;
+$$;
