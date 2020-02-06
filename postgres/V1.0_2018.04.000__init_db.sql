@@ -5,3 +5,5 @@
 
 CREATE SCHEMA site01;
 
+--set time zone 'Asia/Shanghai'
+

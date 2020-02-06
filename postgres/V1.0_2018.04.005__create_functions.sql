@@ -421,3 +421,18 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION site01.func_get_local_Time(in_date in timestamp with time zone)
+  RETURNS timestamp with time zone  LANGUAGE plpgsql AS $$
+DECLARE
+  v_ret timestamp with time zone;
+
+BEGIN
+     select in_date at  time zone 'Asia/Shanghai' into v_ret;
+    
+    return v_ret;
+  exception
+    when others then
+      raise '%',SQLERRM;
+END;
+$$;
+

@@ -218,7 +218,7 @@ BEGIN
          PARTS_ID,
          chan_id)
       values
-        (SEQ_STOCK_ID.NEXTVAL,
+        (nextval('site01.seq_stock_id' :: REGCLASS),
          in_pn,
          in_sn,
          in_imei,
@@ -276,7 +276,7 @@ UPDATE site01.bad_stock_list s
      WHERE b_stock_id = in_stock_id
        AND STATUS = 'T';
     IF FOUND THEN
-      OUT_R := 'error';
+      OUT_R := 'OK';
       RETURN;
     END IF;
     OUT_R := 'OK';
